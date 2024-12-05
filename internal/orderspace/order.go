@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/DukeRupert/rr/internal/models"
 )
@@ -104,4 +106,88 @@ func NewCustomLine(name string, quantity int, unitPrice float64, taxRateID strin
 		UnitPrice: &unitPrice,
 		TaxRateID: &taxRateID,
 	}
+}
+
+type OrderListParams struct {
+	StartingAfter      string     `url:"starting_after,omitempty"`
+	Limit              int        `url:"limit,omitempty"`
+	CreatedSince       *time.Time `url:"-"`
+	CreatedBefore      *time.Time `url:"-"`
+	DeliveryDateSince  *time.Time `url:"-"`
+	DeliveryDateBefore *time.Time `url:"-"`
+	Number             int        `url:"number,omitempty"`
+	Status             string     `url:"status,omitempty"`
+	Reference          string     `url:"reference,omitempty"`
+	CustomerID         string     `url:"customer_id,omitempty"`
+	StandingOrderID    string     `url:"standing_order_id,omitempty"`
+}
+
+type OrderListResponse struct {
+	Orders  []models.Order `json:"orders"`
+	HasMore bool           `json:"has_more"`
+}
+
+func (c *Client) ListOrders(params *OrderListParams) (*OrderListResponse, error) {
+	basePath := "/orders"
+
+	if params != nil {
+		u, err := url.Parse(basePath)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing URL: %w", err)
+		}
+
+		q := u.Query()
+		if params.StartingAfter != "" {
+			q.Set("starting_after", params.StartingAfter)
+		}
+		if params.Limit > 0 {
+			q.Set("limit", fmt.Sprintf("%d", params.Limit))
+		}
+		if params.CreatedSince != nil {
+			q.Set("created_since", params.CreatedSince.Format(time.RFC3339))
+		}
+		if params.CreatedBefore != nil {
+			q.Set("created_before", params.CreatedBefore.Format(time.RFC3339))
+		}
+		if params.DeliveryDateSince != nil {
+			q.Set("delivery_date_since", params.DeliveryDateSince.Format("2006-01-02"))
+		}
+		if params.DeliveryDateBefore != nil {
+			q.Set("delivery_date_before", params.DeliveryDateBefore.Format("2006-01-02"))
+		}
+		if params.Number > 0 {
+			q.Set("number", fmt.Sprintf("%d", params.Number))
+		}
+		if params.Status != "" {
+			q.Set("status", params.Status)
+		}
+		if params.Reference != "" {
+			q.Set("reference", params.Reference)
+		}
+		if params.CustomerID != "" {
+			q.Set("customer_id", params.CustomerID)
+		}
+		if params.StandingOrderID != "" {
+			q.Set("standing_order_id", params.StandingOrderID)
+		}
+
+		basePath = fmt.Sprintf("%s?%s", basePath, q.Encode())
+	}
+
+	resp, err := c.MakeAuthenticatedRequest("GET", basePath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var result OrderListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return &result, nil
 }
