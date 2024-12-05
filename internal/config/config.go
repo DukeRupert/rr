@@ -1,3 +1,4 @@
+// config/config.go
 package config
 
 import (
@@ -10,32 +11,31 @@ import (
 type Config struct {
 	OrderspaceClientID     string
 	OrderspaceClientSecret string
-	DatabaseURL            string // Adding this for future database configuration
+	DatabaseURL            string
+	PostmarkServerToken    string
 }
 
 func Load() (*Config, error) {
-	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		return nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
-	// Get environment variables
-	clientID := os.Getenv("ORDERSPACE_CLIENT_ID")
-	if clientID == "" {
-		return nil, fmt.Errorf("ORDERSPACE_CLIENT_ID is required")
+	requiredEnvVars := map[string]string{
+		"ORDERSPACE_CLIENT_ID":     os.Getenv("ORDERSPACE_CLIENT_ID"),
+		"ORDERSPACE_CLIENT_SECRET": os.Getenv("ORDERSPACE_CLIENT_SECRET"),
+		"POSTMARK_SERVER_TOKEN":    os.Getenv("POSTMARK_SERVER_TOKEN"),
 	}
 
-	clientSecret := os.Getenv("ORDERSPACE_CLIENT_SECRET")
-	if clientSecret == "" {
-		return nil, fmt.Errorf("ORDERSPACE_CLIENT_SECRET is required")
+	for key, value := range requiredEnvVars {
+		if value == "" {
+			return nil, fmt.Errorf("%s is required", key)
+		}
 	}
 
-	// Create config struct
-	config := &Config{
-		OrderspaceClientID:     clientID,
-		OrderspaceClientSecret: clientSecret,
-		DatabaseURL:            os.Getenv("DATABASE_URL"), // Default to empty string if not set
-	}
-
-	return config, nil
+	return &Config{
+		OrderspaceClientID:     requiredEnvVars["ORDERSPACE_CLIENT_ID"],
+		OrderspaceClientSecret: requiredEnvVars["ORDERSPACE_CLIENT_SECRET"],
+		PostmarkServerToken:    requiredEnvVars["POSTMARK_SERVER_TOKEN"],
+		DatabaseURL:            os.Getenv("DATABASE_URL"),
+	}, nil
 }

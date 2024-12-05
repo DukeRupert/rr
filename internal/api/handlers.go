@@ -2,21 +2,24 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/DukeRupert/rr/internal/email"
 	"github.com/DukeRupert/rr/internal/orderspace"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
 	client *orderspace.Client
+	email  *email.Client
 	db     *sql.DB
 }
 
-func NewHandler(client *orderspace.Client, db *sql.DB) *Handler {
-	return &Handler{client: client, db: db}
+func NewHandler(client *orderspace.Client, email *email.Client, db *sql.DB) *Handler {
+	return &Handler{client: client, email: email, db: db}
 }
 
 func (h *Handler) GetCustomers(c echo.Context) error {
@@ -83,6 +86,25 @@ func (h *Handler) GetOrders(c echo.Context) error {
 	response, err := h.client.ListOrders(params)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) SendTestEmail(c echo.Context) error {
+	testEmail := email.Email{
+		From:     "orders@fireflysoftware.dev", // Replace with your verified sender
+		To:       "logan@fireflysoftware.dev",
+		Subject:  "Test Email from Postmark API",
+		HtmlBody: "<html><body><h1>Test Email</h1><p>This is a test email sent via Postmark API.</p></body></html>",
+		TextBody: "Test Email\n\nThis is a test email sent via Postmark API.",
+	}
+
+	response, err := h.email.SendEmail(testEmail)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": fmt.Sprintf("Failed to send email: %v", err),
+		})
 	}
 
 	return c.JSON(http.StatusOK, response)

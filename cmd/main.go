@@ -6,6 +6,7 @@ import (
 	"github.com/DukeRupert/rr/internal/api"
 	"github.com/DukeRupert/rr/internal/config"
 	"github.com/DukeRupert/rr/internal/database"
+	"github.com/DukeRupert/rr/internal/email"
 	"github.com/DukeRupert/rr/internal/orderspace"
 
 	"github.com/labstack/echo/v4"
@@ -27,13 +28,17 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	client, err := orderspace.NewClient(cfg.OrderspaceClientID, cfg.OrderspaceClientSecret, db)
+	// Initialize Postmark client
+	postmarkClient := email.NewClient(cfg.PostmarkServerToken)
+
+	// Initialize Orderspace client
+	orderspaceClient, err := orderspace.NewClient(cfg.OrderspaceClientID, cfg.OrderspaceClientSecret, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Setup routes
-	api.SetupRoutes(e, client, db)
+	api.SetupRoutes(e, orderspaceClient, postmarkClient, db)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
