@@ -50,7 +50,6 @@ func createTables(db *sql.DB) error {
             email_addresses TEXT NOT NULL, -- JSON object
             buyers TEXT NOT NULL -- JSON array
         );`,
-
 		`CREATE TABLE IF NOT EXISTS addresses (
             id TEXT PRIMARY KEY,
             customer_id TEXT NOT NULL,
@@ -65,7 +64,6 @@ func createTables(db *sql.DB) error {
             country TEXT NOT NULL,
             FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
         );`,
-
 		`CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
             number INTEGER NOT NULL UNIQUE,
@@ -92,7 +90,6 @@ func createTables(db *sql.DB) error {
             FOREIGN KEY (shipping_address_id) REFERENCES addresses(id),
             FOREIGN KEY (billing_address_id) REFERENCES addresses(id)
         );`,
-
 		`CREATE TABLE IF NOT EXISTS order_lines (
             id TEXT PRIMARY KEY,
             order_id TEXT NOT NULL,
@@ -116,12 +113,20 @@ func createTables(db *sql.DB) error {
             dispatched INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
         );`,
-
+		`CREATE TABLE IF NOT EXISTS customer_notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id TEXT UNIQUE NOT NULL,
+            email_notify_days BOOLEAN NOT NULL DEFAULT true,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+        );`,
 		`CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);`,
 		`CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);`,
 		`CREATE INDEX IF NOT EXISTS idx_orders_delivery_date ON orders(delivery_date);`,
 		`CREATE INDEX IF NOT EXISTS idx_order_lines_order_id ON order_lines(order_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_customer_notifications_customer_id ON customer_notifications(customer_id);`,
 	}
 
 	for _, table := range tables {
@@ -129,6 +134,5 @@ func createTables(db *sql.DB) error {
 			return fmt.Errorf("error creating table: %w", err)
 		}
 	}
-
 	return nil
 }

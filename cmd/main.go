@@ -8,6 +8,7 @@ import (
 	"github.com/DukeRupert/rr/internal/database"
 	"github.com/DukeRupert/rr/internal/email"
 	"github.com/DukeRupert/rr/internal/orderspace"
+	"github.com/DukeRupert/rr/internal/services"
 
 	"github.com/labstack/echo/v4"
 )
@@ -39,6 +40,14 @@ func main() {
 
 	// Setup routes
 	api.SetupRoutes(e, orderspaceClient, postmarkClient, db)
+
+	// Initialize reminder service
+	reminderService, err := services.NewReminderScheduler(db, orderspaceClient, postmarkClient)
+	if err != nil {
+		log.Fatalf("Failed to create reminder service: %v", err)
+	}
+	reminderService.Start()
+	defer reminderService.Shutdown()
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
