@@ -1,6 +1,6 @@
 module github.com/DukeRupert/rr
 
-go 1.23.3
+go 1.21
 
 require (
 	github.com/go-co-op/gocron/v2 v2.12.4 // indirect

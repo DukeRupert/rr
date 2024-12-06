@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -16,7 +17,10 @@ type ReminderScheduler struct {
 }
 
 func NewReminderScheduler(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) (*ReminderScheduler, error) {
-	s, err := gocron.NewScheduler()
+	mst, _ := time.LoadLocation("America/Denver")
+	log.Printf("Task running at: %v", time.Now().In(mst))
+
+	s, err := gocron.NewScheduler(gocron.WithLocation(mst))
 	if err != nil {
 		return nil, fmt.Errorf("creating scheduler: %w", err)
 	}
@@ -26,11 +30,12 @@ func NewReminderScheduler(db *sql.DB, orderClient *orderspace.Client, emailClien
 			1,
 
 			gocron.NewWeekdays(time.Friday),
-			gocron.NewAtTimes(gocron.NewAtTime(9, 0, 0)),
-		),
+			gocron.NewAtTimes(gocron.NewAtTime(9, 0, 0))),
+
 		gocron.NewTask(
 			func() error {
-				return sendOrderReminders(db, orderClient, emailClient)
+				log.Printf("Running scheduled order reminder task at: %v", time.Now())
+				return PreviewOrderReminders(db, orderClient, emailClient)
 			},
 		),
 	)
