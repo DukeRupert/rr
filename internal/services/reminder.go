@@ -30,12 +30,12 @@ func NewReminderScheduler(db *sql.DB, orderClient *orderspace.Client, emailClien
 			1,
 
 			gocron.NewWeekdays(time.Friday),
-			gocron.NewAtTimes(gocron.NewAtTime(9, 0, 0))),
+			gocron.NewAtTimes(gocron.NewAtTime(10, 00, 0))),
 
 		gocron.NewTask(
 			func() error {
 				log.Printf("Running scheduled order reminder task at: %v", time.Now())
-				return PreviewOrderReminders(db, orderClient, emailClient)
+				return SendOrderReminders(db, orderClient, emailClient)
 			},
 		),
 	)
@@ -54,8 +54,9 @@ func (rs *ReminderScheduler) Shutdown() error {
 	return rs.scheduler.Shutdown()
 }
 
-func sendOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) error {
-	// Get customers with orders in last 6 weeks
+func SendOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) error {
+	log.Printf("Starting order reminders at: %s", time.Now().Format(time.RFC3339))
+
 	sixWeeksAgo := time.Now().AddDate(0, 0, -42)
 	params := &orderspace.CustomerListParams{
 		UpdatedSince: &sixWeeksAgo,
@@ -67,37 +68,40 @@ func sendOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient 
 	}
 
 	for _, customer := range resp.Customers {
-		// Check if customer has opted out
 		var notifyDays bool
 		err := db.QueryRow(`
-            INSERT INTO customer_notifications (customer_id, email_notify_days)
-            VALUES (?, true)
-            ON CONFLICT (customer_id) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
-            RETURNING email_notify_days
-        `, customer.ID).Scan(&notifyDays)
+           SELECT COALESCE(
+               (SELECT email_notify_days FROM customer_notifications WHERE customer_id = ?),
+               true
+           )
+       `, customer.ID).Scan(&notifyDays)
 		if err != nil {
-			return fmt.Errorf("checking notification preference: %w", err)
-		}
-
-		if !notifyDays {
+			log.Printf("ERROR checking notification preference for %s: %v", customer.CompanyName, err)
 			continue
 		}
 
-		// Send reminder email
+		if !notifyDays {
+			log.Printf("SKIPPED %s (notifications disabled)", customer.CompanyName)
+			continue
+		}
+
 		reminderEmail := email.Email{
 			From:     "info@rockabillyroasting.com",
 			To:       customer.EmailAddresses.Orders,
-			Subject:  "Reminder: Place Your Order by Monday",
+			Subject:  "Time to Place Your Coffee Order!",
 			HtmlBody: generateReminderEmailHTML(customer.CompanyName),
 			TextBody: generateReminderEmailText(customer.CompanyName),
 		}
 
 		_, err = emailClient.SendEmail(reminderEmail)
 		if err != nil {
-			return fmt.Errorf("sending reminder to %s: %w", customer.ID, err)
+			log.Printf("ERROR sending reminder to %s: %v", customer.CompanyName, err)
+		} else {
+			log.Printf("SUCCESS sent reminder to %s (%s)", customer.CompanyName, customer.EmailAddresses.Orders)
 		}
 	}
 
+	log.Printf("Completed order reminders at: %s", time.Now().Format(time.RFC3339))
 	return nil
 }
 
@@ -108,6 +112,7 @@ func generateReminderEmailHTML(companyName string) string {
                 <h2>Hey there, %s!</h2>
                 <p>Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.</p>
                 <p>To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by Monday. This helps us make sure your beans arrive right on schedule the following week.</p>
+                <p><a href="https://rockabillyroasting.orderspace.com/">Click here to place your order now!</a></p>
                 <p>Need anything else? Just hit reply - we're always happy to help!</p>
                 <p>Keep rockin',<br>
                 The Rockabilly Roasting Team</p>
@@ -122,6 +127,8 @@ func generateReminderEmailText(companyName string) string {
 Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.
 
 To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by Monday. This helps us make sure your beans arrive right on schedule the following week.
+
+Place your order here: https://rockabillyroasting.orderspace.com/
 
 Need anything else? Just hit reply - we're always happy to help!
 
