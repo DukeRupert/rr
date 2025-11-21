@@ -109,9 +109,8 @@ func generateReminderEmailHTML(companyName string) string {
 	return fmt.Sprintf(`
         <html>
             <body>
-                <h2>Hey there, %s!</h2>
-                <p>Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.</p>
-                <p>To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by Saturday afternoon. This helps us make sure your beans arrive right on schedule the following week.</p>
+                <h2>Hey guys!</h2>
+                <p>The roastery will be closed from November 27th-30th for the holiday. The last day for wholesale deliveries for that week will be <strong>WEDNESDAY, NOVEMBER 26</strong>. If you need coffee for that week, make sure you get your order in by the 26th before 1pm, and we will deliver that day. The next wholesale delivery will be Monday, December 1. Thanks so much!</p>
                 <p><a href="https://rockabillyroasting.orderspace.com/">Click here to place your order now!</a></p>
                 <p>Need anything else? Just hit reply - we're always happy to help!</p>
                 <p>Keep rockin',<br>
@@ -122,11 +121,9 @@ func generateReminderEmailHTML(companyName string) string {
 }
 
 func generateReminderEmailText(companyName string) string {
-	return fmt.Sprintf(`Hey there, %s!
+	return fmt.Sprintf(`Hey guys!
 
-Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.
-
-To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by Monday. This helps us make sure your beans arrive right on schedule the following week.
+The roastery will be closed from November 27th-30th for the holiday. The last day for wholesale deliveries for that week will be WEDNESDAY, NOVEMBER 26. If you need coffee for that week, make sure you get your order in by the 26th before 1pm, and we will deliver that day. The next wholesale delivery will be Monday, December 1. Thanks so much!
 
 Place your order here: https://rockabillyroasting.orderspace.com/
 
