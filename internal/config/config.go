@@ -18,9 +18,9 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
+	// Load .env file if it exists, but don't fail if it doesn't
+	// (environment variables may already be set by Docker)
+	_ = godotenv.Load()
 
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPort := os.Getenv("SMTP_PORT")
