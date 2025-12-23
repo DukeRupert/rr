@@ -22,4 +22,5 @@ func SetupRoutes(e *echo.Echo, client *orderspace.Client, email *email.Client, d
 		}
 		return c.JSON(http.StatusOK, map[string]string{"status": "preview sent"})
 	})
+	e.POST("/api/email/send-adhoc", h.SendAdHocEmail)
 }
