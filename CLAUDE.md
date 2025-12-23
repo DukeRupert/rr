@@ -16,8 +16,12 @@ go build -o main ./cmd/main.go
 # Run locally
 go run cmd/main.go
 
-# Run with Docker Compose
-docker-compose up --build
+# Run with Docker Compose (production - uses Postmark)
+docker compose up --build
+
+# Run with Docker Compose (development - uses Mailhog)
+docker compose -f docker-compose.dev.yml up --build
+# View captured emails at http://localhost:8025
 
 # Build Docker image
 docker build -t rr .
@@ -42,7 +46,13 @@ ORDERSPACE_CLIENT_ID=your_client_id
 ORDERSPACE_CLIENT_SECRET=your_client_secret
 POSTMARK_SERVER_TOKEN=your_postmark_token
 DATABASE_URL=./rockabilly.db  # Optional, defaults to rockabilly.db
+
+# Optional: For local development with SMTP (e.g., Mailhog)
+# SMTP_HOST=localhost
+# SMTP_PORT=1025
 ```
+
+Note: Either `POSTMARK_SERVER_TOKEN` or `SMTP_HOST` must be set. When `SMTP_HOST` is set, emails are sent via SMTP instead of Postmark API.
 
 ## Architecture
 
@@ -78,8 +88,10 @@ The application follows a standard Go project layout with `cmd/` for entrypoints
 - Supports customer and order data synchronization with Orderspace API
 
 **Email Client (`internal/email/`)**
-- Postmark API client for transactional email delivery
-- `Client.SendEmail()` sends emails using server token authentication
+- `Sender` interface allows swapping between email backends
+- `Client` (Postmark): Production email delivery via Postmark API
+- `SMTPClient`: Development email delivery via SMTP (for use with Mailhog)
+- Email client is selected at startup based on `SMTP_HOST` environment variable
 
 **Reminder Service (`internal/services/`)**
 - **Scheduler**: Uses `gocron/v2` to run weekly on Fridays at 10:00 AM MST (America/Denver timezone)
@@ -91,9 +103,13 @@ The application follows a standard Go project layout with `cmd/` for entrypoints
 - **PreviewOrderReminders()**: Sends a preview email to `logan@fireflysoftware.dev` listing all customers who will receive reminders
 
 **API Routes (`internal/api/`)**
+- `GET /health` - Health check endpoint, returns `{"status": "ok"}`
 - `GET /api/customers` - Fetch customers from Orderspace
 - `GET /api/orders` - Fetch orders from Orderspace
 - `GET /api/email/preview-reminders` - Trigger preview email showing which customers will receive reminders
+- `POST /api/email/send-adhoc` - Send custom ad-hoc emails to all recent customers (for corrections, updates, etc.)
+  - Request body: `{"subject": "...", "htmlBody": "...", "textBody": "..."}`
+  - Returns: `{"sent": N, "failed": N, "skipped": N, "details": [...]}`
 
 ### Data Models (`internal/models/`)
 - Customer, Order, OrderLine, Address structures map to both Orderspace API responses and database schema
