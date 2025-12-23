@@ -14,6 +14,9 @@ import (
 // routes.go
 func SetupRoutes(e *echo.Echo, client *orderspace.Client, email *email.Client, db *sql.DB) {
 	h := NewHandler(client, email, db)
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
 	e.GET("/api/customers", h.GetCustomers)
 	e.GET("/api/orders", h.GetOrders)
 	e.GET("/api/email/preview-reminders", func(c echo.Context) error {
