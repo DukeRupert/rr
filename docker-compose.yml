@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: dukerupert/rr:latest
     ports:
       - "1234:8080"
     environment:
