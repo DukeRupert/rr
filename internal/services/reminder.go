@@ -16,7 +16,7 @@ type ReminderScheduler struct {
 	scheduler gocron.Scheduler
 }
 
-func NewReminderScheduler(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) (*ReminderScheduler, error) {
+func NewReminderScheduler(db *sql.DB, orderClient *orderspace.Client, emailClient email.Sender) (*ReminderScheduler, error) {
 	mst, _ := time.LoadLocation("America/Denver")
 	log.Printf("Task running at: %v", time.Now().In(mst))
 
@@ -54,7 +54,7 @@ func (rs *ReminderScheduler) Shutdown() error {
 	return rs.scheduler.Shutdown()
 }
 
-func SendOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) error {
+func SendOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient email.Sender) error {
 	log.Printf("Starting order reminders at: %s", time.Now().Format(time.RFC3339))
 
 	sixWeeksAgo := time.Now().AddDate(0, 0, -42)
@@ -133,7 +133,7 @@ Keep rockin',
 The Rockabilly Roasting Team`, companyName)
 }
 
-func PreviewOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient *email.Client) error {
+func PreviewOrderReminders(db *sql.DB, orderClient *orderspace.Client, emailClient email.Sender) error {
 	sixWeeksAgo := time.Now().AddDate(0, 0, -42)
 	params := &orderspace.CustomerListParams{
 		UpdatedSince: &sixWeeksAgo,

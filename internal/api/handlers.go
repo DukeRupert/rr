@@ -27,12 +27,12 @@ type AdHocEmailResponse struct {
 
 type Handler struct {
 	client *orderspace.Client
-	email  *email.Client
+	email  email.Sender
 	db     *sql.DB
 }
 
-func NewHandler(client *orderspace.Client, email *email.Client, db *sql.DB) *Handler {
-	return &Handler{client: client, email: email, db: db}
+func NewHandler(client *orderspace.Client, emailClient email.Sender, db *sql.DB) *Handler {
+	return &Handler{client: client, email: emailClient, db: db}
 }
 
 func (h *Handler) GetCustomers(c echo.Context) error {

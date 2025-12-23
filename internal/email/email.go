@@ -41,6 +41,14 @@ type EmailResponse struct {
 	Message     string    `json:"Message"`
 }
 
+type Sender interface {
+	SendEmail(email Email) (*EmailResponse, error)
+}
+
+func (e Email) Validate() error {
+	return validateEmail(e)
+}
+
 func (c *Client) SendEmail(email Email) (*EmailResponse, error) {
 	if err := validateEmail(email); err != nil {
 		return nil, fmt.Errorf("validating email: %w", err)

@@ -29,8 +29,19 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// Initialize Postmark client
-	postmarkClient := email.NewClient(cfg.PostmarkServerToken)
+	// Initialize email client (SMTP for dev, Postmark for prod)
+	var emailClient email.Sender
+	if cfg.SMTPHost != "" {
+		port := cfg.SMTPPort
+		if port == "" {
+			port = "1025"
+		}
+		log.Printf("Using SMTP email client (dev mode): %s:%s", cfg.SMTPHost, port)
+		emailClient = email.NewSMTPClient(cfg.SMTPHost, port)
+	} else {
+		log.Println("Using Postmark email client (production mode)")
+		emailClient = email.NewClient(cfg.PostmarkServerToken)
+	}
 
 	// Initialize Orderspace client
 	orderspaceClient, err := orderspace.NewClient(cfg.OrderspaceClientID, cfg.OrderspaceClientSecret, db)
@@ -39,10 +50,10 @@ func main() {
 	}
 
 	// Setup routes
-	api.SetupRoutes(e, orderspaceClient, postmarkClient, db)
+	api.SetupRoutes(e, orderspaceClient, emailClient, db)
 
 	// Initialize reminder service
-	reminderService, err := services.NewReminderScheduler(db, orderspaceClient, postmarkClient)
+	reminderService, err := services.NewReminderScheduler(db, orderspaceClient, emailClient)
 	if err != nil {
 		log.Fatalf("Failed to create reminder service: %v", err)
 	}

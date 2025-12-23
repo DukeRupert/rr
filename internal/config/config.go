@@ -13,6 +13,8 @@ type Config struct {
 	OrderspaceClientSecret string
 	DatabaseURL            string
 	PostmarkServerToken    string
+	SMTPHost               string
+	SMTPPort               string
 }
 
 func Load() (*Config, error) {
@@ -20,10 +22,12 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+
 	requiredEnvVars := map[string]string{
 		"ORDERSPACE_CLIENT_ID":     os.Getenv("ORDERSPACE_CLIENT_ID"),
 		"ORDERSPACE_CLIENT_SECRET": os.Getenv("ORDERSPACE_CLIENT_SECRET"),
-		"POSTMARK_SERVER_TOKEN":    os.Getenv("POSTMARK_SERVER_TOKEN"),
 	}
 
 	for key, value := range requiredEnvVars {
@@ -32,10 +36,17 @@ func Load() (*Config, error) {
 		}
 	}
 
+	postmarkToken := os.Getenv("POSTMARK_SERVER_TOKEN")
+	if smtpHost == "" && postmarkToken == "" {
+		return nil, fmt.Errorf("either SMTP_HOST or POSTMARK_SERVER_TOKEN is required")
+	}
+
 	return &Config{
 		OrderspaceClientID:     requiredEnvVars["ORDERSPACE_CLIENT_ID"],
 		OrderspaceClientSecret: requiredEnvVars["ORDERSPACE_CLIENT_SECRET"],
-		PostmarkServerToken:    requiredEnvVars["POSTMARK_SERVER_TOKEN"],
+		PostmarkServerToken:    postmarkToken,
 		DatabaseURL:            os.Getenv("DATABASE_URL"),
+		SMTPHost:               smtpHost,
+		SMTPPort:               smtpPort,
 	}, nil
 }
