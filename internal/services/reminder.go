@@ -110,9 +110,9 @@ func generateReminderEmailHTML(companyName string) string {
         <html>
             <body>
                 <h2>Hey guys!</h2>
-                <p>Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.</p>
-                <p>To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by <strong>Friday afternoon</strong>. This helps us make sure your beans arrive right on schedule the following week.</p>
-                <p><a href="https://rockabillyroasting.orderspace.com/">Click here to place your order now!</a></p>
+                <p>Happy Holidays from your coffee crew at Rockabilly Roasting!</p>
+                <p>Just a quick reminder that we're closed through Saturday, December 28th. We'll be back to normal operations and deliveries on <strong>Monday, December 29th</strong>.</p>
+                <p>When you're ready to stock up for the New Year, <a href="https://rockabillyroasting.orderspace.com/">click here to place your order</a>!</p>
                 <p>Need anything else? Just hit reply - we're always happy to help!</p>
                 <p>Keep rockin',<br>
                 The Rockabilly Roasting Team</p>
@@ -124,11 +124,11 @@ func generateReminderEmailHTML(companyName string) string {
 func generateReminderEmailText(companyName string) string {
 	return fmt.Sprintf(`Hey guys!
 
-Just a friendly reminder from your coffee crew at Rockabilly Roasting over here in Washington State.
+Happy Holidays from your coffee crew at Rockabilly Roasting!
 
-To keep your coffee delivery running smooth as a '57 Chevy, we kindly ask that you place your order by Friday afternoon. This helps us make sure your beans arrive right on schedule the following week.
+Just a quick reminder that we're closed through Saturday, December 28th. We'll be back to normal operations and deliveries on Monday, December 29th.
 
-Place your order here: https://rockabillyroasting.orderspace.com/
+When you're ready to stock up for the New Year, place your order here: https://rockabillyroasting.orderspace.com/
 
 Need anything else? Just hit reply - we're always happy to help!
 
